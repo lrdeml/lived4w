@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "lived4w — adım sekansör, piyano rulo ve mikserli müzik prodüksiyon uygulaması",
   "author": "monol4b <noreply@example.com>",
-  "homepage": "https://github.com/KULLANICI/lived4w",
+  "homepage": "https://github.com/lrdeml/lived4w",
   "license": "GPL-3.0-only",
   "main": "electron/main.js",
   "scripts": {
