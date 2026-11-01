@@ -1,5 +1,6 @@
 const { app, BrowserWindow, shell, Menu, ipcMain } = require("electron");
 const path = require("path");
+const { pathToFileURL } = require("url");
 
 // AppImage'de chrome-sandbox SUID olamaz (Ubuntu 24.04+, Fedora vb. çalıştırmayı reddeder).
 // Tüm dağıtımlarda açılması için AppImage içinde sandbox kapatılır.
@@ -38,11 +39,10 @@ function createWindow() {
     return { action: "deny" };
   });
   win.webContents.on("will-navigate", (e, url) => {
-    if (!url.startsWith("file://")) { e.preventDefault(); if (/^https?:/i.test(url)) shell.openExternal(url); }
+    if (url !== pathToFileURL(index).href) { e.preventDefault(); if (/^https?:/i.test(url)) shell.openExternal(url); }
   });
   // Render süreci çökerse pencereyi yeniden yükle
   win.webContents.on("render-process-gone", () => { if (win) win.loadFile(index); });
-  win.on("unresponsive", () => { if (win) win.reload(); });
   win.on("closed", () => (win = null));
 }
 
