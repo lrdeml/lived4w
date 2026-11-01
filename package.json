@@ -1,0 +1,29 @@
+{
+  "name": "lived4w",
+  "version": "1.0.0",
+  "description": "lived4w — adım sekansör, piyano rulo ve mikserli müzik prodüksiyon uygulaması",
+  "author": "monol4b <noreply@example.com>",
+  "homepage": "https://github.com/KULLANICI/lived4w",
+  "license": "GPL-3.0-only",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --linux AppImage --x64"
+  },
+  "devDependencies": { "electron": "^33.2.1", "electron-builder": "^25.1.8" },
+  "build": {
+    "appId": "io.github.lived4w",
+    "productName": "lived4w",
+    "artifactName": "lived4w-${version}-${arch}.${ext}",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["electron/**", "docs/index.html", "package.json"],
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "AudioVideo",
+      "synopsis": "Müzik prodüksiyon stüdyosu",
+      "executableArgs": ["--no-sandbox"],
+      "desktop": { "StartupWMClass": "lived4w", "Keywords": "audio;music;daw;sequencer;" },
+      "target": [{ "target": "AppImage", "arch": ["x64"] }]
+    }
+  }
+}
