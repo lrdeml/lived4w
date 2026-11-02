@@ -78,9 +78,11 @@ Needs Node.js 18 or newer.
 
 ```bash
 npm install
-npm start        # run from source
-npm run dist     # writes dist/lived4w-<version>-x86_64.AppImage
+npm start
+npm run dist
 ```
+
+`npm start` runs from source. `npm run dist` writes `dist/lived4w-<version>-x86_64.AppImage`.
 
 The whole app is one file, `docs/index.html`. The same file runs in the browser (GitHub Pages) and inside Electron, where the window buttons are drawn by the app itself.
 

@@ -75,7 +75,6 @@ let S={bpm:120,mode:"pat",cur:0,pats:[mk(),mk(),mk(),mk()],song:[0,-1,-1,-1,-1,-
 [0,4,8,12].forEach(i=>S.pats[0].s[0][i]=1);[4,12].forEach(i=>S.pats[0].s[1][i]=1);[2,6,10,14].forEach(i=>S.pats[0].s[3][i]=1);[0,3,6,10].forEach(i=>S.pats[0].s[4][i]=1);
 S.pats[0].n=[{s:0,l:2,k:60},{s:4,l:2,k:63},{s:8,l:2,k:67},{s:12,l:4,k:65}];
 const st=m=>{$("#s").textContent=m};
-/* ---- ses motoru ---- */
 let ctx,mst,an,bus,nb,dly,fb,wet,playing=false,step=0,next=0,slot=7,pp=0,cs=-1,timer=0,q=[];
 const wk=(()=>{try{const w=new Worker(URL.createObjectURL(new Blob(["let i=0;onmessage=e=>{clearInterval(i);if(e.data)i=setInterval(()=>postMessage(0),25)}"])));w.onmessage=()=>sched();return w}catch(e){return null}})();
 function ensure(){if(!ctx){const C=window.AudioContext||window.webkitAudioContext;ctx=new C({latencyHint:"interactive"});graph()}
@@ -98,9 +97,8 @@ if(!mu(5))P.n.forEach(n=>{if(n.s===step)lead(n.k,tt,n.l*sd)});
 q.push({t:tt,s:step,p:pp});if(q.length>64)q.shift();next+=sd;step=(step+1)%NW}
 if(!wk)timer=setTimeout(sched,25)}
 function play(){ensure();if(playing)return;playing=true;step=0;slot=7;next=ctx.currentTime+.06;q=[];wk&&wk.postMessage(1);sched();upl();st(t("playing"))}
-function stop(){playing=false;clearTimeout(timer);wk&&wk.postMessage(0);q=[];cs=-1;hl();drawPR();upl();st(t("stopped"))}
-const toggle=()=>playing?stop():play();
-/* ---- arayüz ---- */
+function halt(){playing=false;clearTimeout(timer);wk&&wk.postMessage(0);q=[];cs=-1;hl();drawPR();upl();st(t("stopped"))}
+const toggle=()=>playing?halt():play();
 function hl(){document.querySelectorAll(".s").forEach(e=>e.classList.toggle("cur",+e.dataset.j===cs))}
 function rack(){const P=S.pats[S.cur];$("#rk").innerHTML=CH.map((n,i)=>`<div class="row"><button class="nm${S.mix[i].m?" mt":""}${S.mix[i].s?" so":""}" title="${t("nm")}" data-c="${i}">${n}</button><div class="st">${Array.from({length:NW},(_,j)=>`<i class="s${(i<5?P.s[i][j]:P.n.some(x=>x.s===j))?" on":""}${j%8<4?" a":""}" data-c="${i}" data-j="${j}"></i>`).join("")}</div></div>`).join("");hl()}
 $("#rk").onclick=e=>{const c=e.target.dataset.c;if(c===undefined)return;const i=+c;
@@ -137,14 +135,13 @@ $("#mx").oninput=e=>{const t=e.target;if(t.dataset.m){S.mix[+t.dataset.c][t.data
 $("#mx").ondblclick=e=>{const t=e.target;if(t.dataset.m==="p"){t.value=0;S.mix[+t.dataset.c].p=0;applyMix()}};
 $("#pls").onchange=e=>{if(e.target.dataset.sl!==undefined){snap();S.song[+e.target.dataset.sl]=+e.target.value}};
 $("#cl").onclick=()=>{snap();S.pats[S.cur]=mk();sync();st(t("cleared"))};
-/* ---- proje ---- */
 function dl(b,n,ty){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([b],{type:ty}));a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e4)}
 $("#bs").onclick=()=>{dl(JSON.stringify(S),"project.l4w.json","application/json");st(t("saved"))};
 $("#bo").onclick=()=>$("#fi").click();
-const num=(x,a,b)=>typeof x==="number"&&x>=a&&x<=b;
-function valid(d){return d&&num(d.bpm,40,300)&&num(d.cur,0,3)&&num(d.mv,0,1)&&(d.mode==="pat"||d.mode==="song")&&Array.isArray(d.pats)&&d.pats.length===4&&
-d.pats.every(p=>p&&Array.isArray(p.s)&&p.s.length===5&&p.s.every(r=>Array.isArray(r)&&r.length===NW)&&Array.isArray(p.n)&&p.n.every(n=>n&&num(n.s,0,NW-1)&&num(n.l,1,NW)&&num(n.k,LO,HI)))&&
-Array.isArray(d.song)&&d.song.length===8&&d.song.every(x=>num(x,-1,3))&&Array.isArray(d.mix)&&d.mix.length===6&&d.mix.every(m=>m&&num(m.v,0,1)&&num(m.p,-1,1))&&(d.sw===undefined||num(d.sw,0,.5))&&(d.fx===undefined||num(d.fx,0,1))}
+const num=(x,a,b)=>typeof x==="number"&&x>=a&&x<=b,int=(x,a,b)=>Number.isInteger(x)&&x>=a&&x<=b;
+function valid(d){return d&&num(d.bpm,40,300)&&int(d.cur,0,3)&&num(d.mv,0,1)&&(d.mode==="pat"||d.mode==="song")&&Array.isArray(d.pats)&&d.pats.length===4&&
+d.pats.every(p=>p&&Array.isArray(p.s)&&p.s.length===5&&p.s.every(r=>Array.isArray(r)&&r.length===NW&&r.every(x=>x===0||x===1))&&Array.isArray(p.n)&&p.n.length<=512&&p.n.every(n=>n&&int(n.s,0,NW-1)&&int(n.l,1,NW)&&int(n.k,LO,HI)))&&
+Array.isArray(d.song)&&d.song.length===8&&d.song.every(x=>int(x,-1,3))&&Array.isArray(d.mix)&&d.mix.length===6&&d.mix.every(m=>m&&num(m.v,0,1)&&num(m.p,-1,1))&&(d.sw===undefined||num(d.sw,0,.5))&&(d.fx===undefined||num(d.fx,0,1))}
 async function loadF(f){try{if(f.size>2e6)throw 0;const d=JSON.parse(await f.text());if(!valid(d))throw 0;norm(d);snap();S=d;sync();st(t("opened")+": "+f.name)}catch(x){st(t("bad"))}}
 $("#fi").onchange=e=>{const f=e.target.files[0];e.target.value="";f&&loadF(f)};
 addEventListener("dragover",e=>e.preventDefault());addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer.files[0];f&&loadF(f)});
@@ -152,13 +149,13 @@ addEventListener("keydown",e=>{if(e.ctrlKey&&"zyZ".includes(e.key)&&!(e.target.t
 if(e.ctrlKey&&e.key==="s"){e.preventDefault();$("#bs").click();return}if(e.ctrlKey&&e.key==="o"){e.preventDefault();$("#bo").click();return}
 if(e.code==="Space"&&!(e.target.tagName==="INPUT"&&e.target.type==="number")&&e.target.tagName!=="SELECT"){e.preventDefault();toggle()}});
 addEventListener("keyup",e=>{if(e.code==="Space"&&e.target.tagName!=="SELECT")e.preventDefault()});
+let ab=new Uint8Array(0);
 (function loop(){if(playing&&ctx){while(q.length&&q[0].t<=ctx.currentTime){const x=q.shift();if(x.s!==cs||x.p!==pp){cs=x.s;hl();drawPR()}}}
-if(an){const a=new Uint8Array(an.fftSize);an.getByteTimeDomainData(a);let m=0;for(const v of a)m=Math.max(m,Math.abs(v-128));$("#mt i").style.width=Math.min(100,m/128*100)+"%"}
+if(an){const a=ab.length===an.fftSize?ab:(ab=new Uint8Array(an.fftSize));an.getByteTimeDomainData(a);let m=0;for(const v of a)m=Math.max(m,Math.abs(v-128));$("#mt i").style.width=Math.min(100,m/128*100)+"%"}
 requestAnimationFrame(loop)})();
 addEventListener("error",e=>st(t("err")+": "+e.message));
-if(window.winctl){document.documentElement.classList.add("app");$(".tl").onclick=e=>{const w=e.target.dataset.w;if(w)winctl.send(w)};
-$("header").ondblclick=e=>{if(e.target===e.currentTarget||e.target.closest("b"))winctl.send("max")}}
-/* ---- geri al, otomatik kayıt, WAV ---- */
+if(window.winctl){document.documentElement.classList.add("app");$(".tl").onclick=e=>{const w=e.target.dataset.w;if(w)window.winctl.send(w)};
+$("header").ondblclick=e=>{if(e.target===e.currentTarget||e.target.closest("b"))window.winctl.send("max")}}
 let hist=[],fut=[],restored=false,lastA="";
 const snap=()=>{hist.push(JSON.stringify(S));if(hist.length>60)hist.shift();fut=[]};
 const undo=()=>{if(hist.length){fut.push(JSON.stringify(S));S=JSON.parse(hist.pop());sync()}},redo=()=>{if(fut.length){hist.push(JSON.stringify(S));S=JSON.parse(fut.pop());sync()}};
@@ -168,12 +165,14 @@ try{const d=JSON.parse(localStorage.getItem("l4w-auto"));if(valid(d)){norm(d);S=
 function enc(b){const n=b.length,d=new DataView(new ArrayBuffer(44+n*4)),w=(o,s)=>[...s].forEach((c,i)=>d.setUint8(o+i,c.charCodeAt(0))),sr=b.sampleRate;
 w(0,"RIFF");d.setUint32(4,36+n*4,true);w(8,"WAVEfmt ");d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,2,true);d.setUint32(24,sr,true);d.setUint32(28,sr*4,true);d.setUint16(32,4,true);d.setUint16(34,16,true);w(36,"data");d.setUint32(40,n*4,true);
 const L=b.getChannelData(0),R=b.getChannelData(1),f=x=>Math.max(-1,Math.min(1,x))*32767;for(let i=0;i<n;i++){d.setInt16(44+i*4,f(L[i]),true);d.setInt16(46+i*4,f(R[i]),true)}return d.buffer}
-async function wav(){if(playing)stop();ensure();const sd=60/S.bpm/4,seq=S.mode==="song"?S.song.filter(p=>p>=0):[];if(!seq.length)seq.push(S.cur);
-const sr=44100,live={ctx,mst,an,bus,nb,dly,fb,wet};try{st(t("rend"));ctx=new OfflineAudioContext(2,Math.ceil((seq.length*NW*sd+3)*sr),sr);graph();let at=0;
-seq.forEach(pi=>{const P=S.pats[pi];for(let s=0;s<NW;s++,at+=sd){const tt=at+(s&1?S.sw*sd:0);for(let i=0;i<5;i++)if(P.s[i][s]&&!mu(i))V[i](tt,bus[i].g);if(!mu(5))P.n.forEach(n=>{if(n.s===s)lead(n.k,tt,n.l*sd)})}});
-dl(enc(await ctx.startRendering()),"lived4w.wav","audio/wav");st(t("done"))}catch(e){st(t("fail"))}finally{({ctx,mst,an,bus,nb,dly,fb,wet}=live)}}
+let exporting=false;
+async function wav(){if(exporting)return;if(playing)halt();exporting=true;const sd=60/S.bpm/4,seq=S.mode==="song"?S.song.filter(p=>p>=0):[];if(!seq.length)seq.push(S.cur);
+const sr=44100,live={ctx,mst,an,bus,nb,dly,fb,wet};let off;
+try{st(t("rend"));off=ctx=new OfflineAudioContext(2,Math.ceil((seq.length*NW*sd+3)*sr),sr);graph();let at=0;
+seq.forEach(pi=>{const P=S.pats[pi];for(let s=0;s<NW;s++,at+=sd){const tt=at+(s&1?S.sw*sd:0);for(let i=0;i<5;i++)if(P.s[i][s]&&!mu(i))V[i](tt,bus[i].g);if(!mu(5))P.n.forEach(n=>{if(n.s===s)lead(n.k,tt,n.l*sd)})}})}
+catch(e){st(t("fail"));exporting=false;return}finally{({ctx,mst,an,bus,nb,dly,fb,wet}=live)}
+try{dl(enc(await off.startRendering()),"lived4w.wav","audio/wav");st(t("done"))}catch(e){st(t("fail"))}exporting=false}
 $("#un").onclick=undo;$("#re").onclick=redo;$("#bw").onclick=wav;
-/* ---- araçlar ---- */
 const PRE={"Four on the floor":["1000100010001000","0000000000000000","0000100000001000","0010001000100010","0100010001000100"],"Hip-hop":["1000001000100000","0000100000001000","0000000000000000","1010101010101010","1000001000100000"],"Trap":["1000000010100000","0000000010000000","0000000010000000","1011101110111011","1000000010100000"],"Breakbeat":["1000000110010000","0000100000001001","0000000000000000","1010101010101011","1000000100100000"]};
 let met=false,rec=false,taps=[],oct=0;
 const KP={KeyA:0,KeyW:1,KeyS:2,KeyE:3,KeyD:4,KeyF:5,KeyT:6,KeyG:7,KeyY:8,KeyH:9,KeyU:10,KeyJ:11,KeyK:12,KeyO:13,KeyL:14};
@@ -190,7 +189,6 @@ addEventListener("keydown",e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||(e.t
 if(e.code==="KeyZ"||e.code==="KeyX"){oct=Math.max(-12,Math.min(12,oct+(e.code==="KeyX"?12:-12)));return}
 const n=KP[e.code];if(n===undefined)return;const k=60+oct+n;ensure();lead(k,ctx.currentTime,.3);
 if(rec&&playing&&cs>=0&&pp===S.cur&&k>=LO&&k<=HI){const N=S.pats[S.cur].n;if(!N.some(x=>x.s===cs&&x.k===k)){N.push({s:cs,l:1,k});drawPR();rack()}}});
-/* ---- tema (Material 3) ve dil ---- */
 const TH={mint:[["#7cf5b0","#08140e","#0e0f11","#16181b","#2a2d33","#d7dae0","#7d8490","#0a0b0c"],["#0a7d4b","#ffffff","#eceef1","#fafbfc","#cfd3da","#1c1f24","#6a717c","#dfe2e7"]],"purple":[["#cdc0ec","#443a5f","#0f0d12","#1b181f","#4a4650","#eae3ef","#aea9b4","#000000"],["#655789","#fdf7ff","#fdf7fe","#f2ecf5","#b5b0bb","#34313a","#615d68","#ffffff"]],"blue":[["#b9c6ee","#333f61","#0d0e12","#181920","#454850","#e4e5f0","#a9aab5","#000000"],["#4d5e8b","#f9f8ff","#faf8fe","#ededf6","#b0b1bc","#30323b","#5d5f68","#ffffff"]],"green":[["#b3cfa1","#304624","#0c0f0a","#171b14","#444a3f","#e2e7d9","#a7ada0","#000000"],["#486738","#ecffdc","#f9faf1","#ecefe3","#aeb4a6","#2f342a","#5b6155","#ffffff"]],"teal":[["#9bd0cf","#0c4848","#0a0f0f","#131b1b","#3f4a4a","#dce8e7","#a2adad","#000000"],["#1b6969","#e0fffe","#f6faf9","#e7f0ef","#a9b4b3","#2a3434","#566161","#ffffff"]],"red":[["#f9b6ad","#61332e","#130d0c","#221716","#554442","#f9e0dc","#bca6a3","#000000"],["#8c4e46","#fff7f6","#fff8f7","#fee9e6","#c3adaa","#3e2f2d","#6d5b58","#ffffff"]],"amber":[["#f0bd8d","#5a3914","#130d08","#201811","#52463a","#f6e2d2","#baa89a","#000000"],["#835523","#fff7f4","#fff8f5","#fcebde","#c1afa0","#3c3026","#6b5c50","#ffffff"]]};
 const VAR=["--ac","--ak","--bg","--pn","--ln","--tx","--mu","--cv"],TN={mint:"Mint (classic)",purple:"Material Purple",blue:"Material Blue",green:"Material Green",teal:"Material Teal",red:"Material Red",amber:"Material Amber"};
 const LN=["en","tr","de","es","fr"],LNAME=["English","Türkçe","Deutsch","Español","Français"],LS={};
@@ -254,7 +252,6 @@ $("#bt").onclick=()=>{pref.md={auto:"dark",dark:"light",light:"auto"}[pref.md];t
 $("#lg").onchange=e=>{lang=pref.lg=e.target.value;setLang();sp()};
 mq.onchange=()=>{if(pref.md==="auto")theme()};
 setTimeout(()=>{const w=$("#prw");w.scrollTop=(HI-74)*RH*(pr.clientHeight/pr.height)},0);$("#th").value=pref.th;$("#lg").value=lang;theme();setLang();st(t(restored?"rest":"ready"));
-/* ---- paylaşım bağlantısı ve PWA ---- */
 const HOME="https://lrdeml.github.io/lived4w/";
 const b64=u=>btoa(String.fromCharCode(...u)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""),unb=s=>Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
 const pipe=(d,M)=>new Response(new Blob([d]).stream().pipeThrough(new M("deflate-raw")));
